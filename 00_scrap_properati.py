@@ -10,7 +10,7 @@ import pandas as pd
 import re
 
 WEBSITE = "https://www.properati.com.co/"
-PAGES_LIMIT = 20
+PAGES_LIMIT = 21
 
 def features(driver,delay,feature):
     e_gen_size_counter = driver.find_elements_by_xpath('//div[starts-with(@class,"StyledTypologyBlock")]/div[starts-with(@class,"StyledTypologyItem")]')
@@ -29,7 +29,12 @@ def features(driver,delay,feature):
 def property_scan(driver,delay,properties,count,link):
     driver.get(link)
     
-    driver.execute_script("window.scrollBy(0,900)")
+    driver.execute_script("window.scrollBy(0,200)")
+    time.sleep(1)
+    driver.execute_script("window.scrollBy(0,400)")
+    time.sleep(1)
+    driver.execute_script("window.scrollBy(0,500)")
+    time.sleep(1)
     
     try:
         e_gen_name = WebDriverWait(driver,delay).until(EC.presence_of_element_located((By.XPATH,'//h1[starts-with(@class,"StyledTitle")]')))
@@ -57,16 +62,20 @@ def property_scan(driver,delay,properties,count,link):
     try:    
         rooms, v_rooms = features(driver,delay,"Habitaciones")
     except:
-        rooms = None
-        v_rooms = None
+        try:    
+            rooms, v_rooms = features(driver,delay,"Ambientes")
+        except:
+            rooms = None
+            v_rooms = None
 
     try:    
         baths, v_baths = features(driver,delay,"Baños")
     except:
-        baths = None
-        v_baths = None
-
-    driver.execute_script("window.scrollBy(0,1200)")
+        try:    
+            baths, v_baths = features(driver,delay,"Baño")
+        except:
+            baths = None
+            v_baths = None
 
     try:
         see_more_button = driver.find_element_by_xpath('//div[starts-with(@class,"StyledButtonViewMore")]/button')
@@ -77,8 +86,9 @@ def property_scan(driver,delay,properties,count,link):
     try:
         e_gen_description = WebDriverWait(driver,delay).until(EC.presence_of_element_located((By.XPATH,'//div[starts-with(@class,"StyledCollapsible")]/div[@class="child-wrapper"]/div')))
     except:
-        driver.execute_script("window.scrollBy(0,-600)")
-        e_gen_description = WebDriverWait(driver,delay).until(EC.presence_of_element_located((By.XPATH,'//div[starts-with(@class,"StyledCollapsible")]/div[@class="child-wrapper"]/div')))
+        #driver.execute_script("window.scrollBy(0,-600)")
+        #e_gen_description = WebDriverWait(driver,delay).until(EC.presence_of_element_located((By.XPATH,'//div[starts-with(@class,"StyledCollapsible")]/div[@class="child-wrapper"]/div')))
+        pass
     
     try:
         description = e_gen_description.get_attribute("outerHTML")
@@ -88,6 +98,7 @@ def property_scan(driver,delay,properties,count,link):
     try:        
         g_coord = WebDriverWait(driver,delay).until(EC.presence_of_element_located((By.XPATH,'//div[@class="gm-style"]/div/div/a')))
     except: 
+        '''
         try:
             driver.execute_script("window.scrollBy(0,-800)")
             g_coord = WebDriverWait(driver,delay).until(EC.presence_of_element_located((By.XPATH,'//div[@class="gm-style"]/div/div/a')))
@@ -100,9 +111,12 @@ def property_scan(driver,delay,properties,count,link):
                 g_coord = None
         except:
             g_coord = None
+        '''
+        g_coord = None
+    
     try:
         maps_url = str(g_coord.get_attribute("href"))
-        coordinates = re.findall('-?\d?\d.[0-9]{3,6}',maps_url)        
+        coordinates = re.findall('-?\d?\d.[0-9]{1,6}',maps_url)        
         v_coordinate_x = float(coordinates[0])
         v_coordinate_y = float(coordinates[1])
     except:
@@ -118,9 +132,16 @@ def property_scan(driver,delay,properties,count,link):
 
 def links(driver):
     temp_property_links = []
-    time.sleep(1)
+    time.sleep(2)
     property_link_elements = driver.find_elements_by_xpath('//div[starts-with(@class,"StyledCard")]/a[@target="_blank"]')
     #property_link_elements = WebDriverWait(driver,5).until(EC.presence_of_all_elements_located((By.XPATH,'//select[@id="property-type"]')))
+
+    driver.execute_script("window.scrollBy(0,200)")
+    time.sleep(1)
+    driver.execute_script("window.scrollBy(0,400)")
+    time.sleep(1)
+    driver.execute_script("window.scrollBy(0,500)")
+    time.sleep(1)
 
     for count,link in enumerate(property_link_elements):
         if count%2 != 0: 
@@ -136,11 +157,11 @@ def run(city):
     driver = webdriver.Chrome(executable_path="chromedriver.exe", options=options)
     '''
     #Ejecución en segundo plano
-    window_size = "1920,1080"
+    #window_size = "1920,1080"
     chrome_options = Options()
     chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--window-size={}".format(window_size))
-    driver = webdriver.Chrome(executable_path="../chromedriver.exe", options=chrome_options)
+    #chrome_options.add_argument("--window-size={}".format(window_size))
+    driver = webdriver.Chrome(executable_path="chromedriver.exe", options=chrome_options)
     '''
     delay = 5
     driver.get(WEBSITE)
@@ -193,7 +214,7 @@ def run(city):
     for count,link in enumerate(property_links):
         properties = property_scan(driver,delay,properties,count,link)
 
-    properties.to_excel('propiedades.xlsx')
+    properties.to_excel('outputs/propiedades.xlsx')
   
 if __name__ == '__main__' :
     city = str(input("Ciudad de búsqueda: "))
